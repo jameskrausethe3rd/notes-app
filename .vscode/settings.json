@@ -1,0 +1,11 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "dart.enableSdkFormatter": false,
+  "editor.formatOnSave": true,
+  "notebook.defaultFormatter": "Dart-Code.dart-code",
+  "[dart]": {
+    "editor.formatOnSave": true
+  },
+  "dart.lineLength": 80,
+  "prettier.bracketSpacing": true,
+}
