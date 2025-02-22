@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:notes_app/components/drawer.dart';
 import 'package:notes_app/components/note_tile.dart';
+import 'package:notes_app/models/database_service.dart';
 import 'package:notes_app/models/note.dart';
 import 'package:notes_app/models/note_database.dart';
 import 'package:provider/provider.dart';
@@ -64,7 +65,7 @@ class _NotesPageState
         MaterialButton(
           onPressed: () {
             // Add to DB
-            context.read<NoteDatabase>().addNote(textController.text);
+            context.read<DatabaseService>().addNote(textController.text);
 
             // Clear controller
             textController.clear();
@@ -82,7 +83,7 @@ class _NotesPageState
   // Read a note
   void readNotes() {
     context
-        .read<NoteDatabase>()
+        .read<DatabaseService>()
         .fetchNotes();
   }
 
@@ -122,7 +123,7 @@ class _NotesPageState
                   // Update note in DB
                   context
                       .read<
-                        NoteDatabase
+                        DatabaseService
                       >()
                       .updateNote(
                         note.id,
@@ -150,26 +151,19 @@ class _NotesPageState
   // Delete a note
   void deleteNote(int id) {
     context
-        .read<NoteDatabase>()
+        .read<DatabaseService>()
         .deleteNote(id);
   }
 
   @override
   Widget build(BuildContext context) {
     // Note DB
-    final noteDatabase =
-        context.watch<NoteDatabase>();
+    final database =
+        context.watch<DatabaseService>();
 
     // Current notes
     List<Note> currentNotes =
-        noteDatabase.currentNotes;
-
-    // Appbar with color and title
-    // appBar: AppBar(
-    //   elevation: 0,
-    //   backgroundColor: Colors.blue,
-    //   title: const Text('Title Header'),
-    // ),
+        database.currentNotes;
 
     return Scaffold(
       appBar: AppBar(

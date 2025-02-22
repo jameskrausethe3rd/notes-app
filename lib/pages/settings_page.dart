@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:notes_app/theme/theme_provider.dart';
+import 'package:notes_app/models/database_service.dart';
 import 'package:provider/provider.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -35,8 +35,8 @@ class SettingsPage extends StatelessWidget {
         
           // Switch
           CupertinoSwitch(
-            value: Provider.of<ThemeProvider>(context, listen: false).isDarkMode, 
-            onChanged: (value) => Provider.of<ThemeProvider>(context, listen: false).toggleTheme(),
+            value: Provider.of<DatabaseService>(context, listen: false).isDarkModeEnabled, 
+            onChanged: (value) => Provider.of<DatabaseService>(context, listen: false).toggleDarkMode(),
             )
         ],),
       )
