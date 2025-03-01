@@ -14,3 +14,9 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+## To Do
+- Animations when deleting a note (fade out, slide up, etc.)
+- Move Delete/Edit icons on each note into 3 vertical ellipses.
+- Add multi-selecting notes to delete
+- Add toggle to hide a note and put it in the Hidden sub-category
