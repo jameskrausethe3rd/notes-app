@@ -1,32 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:notes_app/components/custom_alert_dialog.dart';
 import 'package:notes_app/components/drawer.dart';
 import 'package:notes_app/components/note_tile.dart';
 import 'package:notes_app/models/database_service.dart';
 import 'package:notes_app/models/note.dart';
-import 'package:notes_app/models/note_database.dart';
+import 'package:notes_app/models/note_category.dart';
 import 'package:provider/provider.dart';
 
 class NotesPage extends StatefulWidget {
-  const NotesPage({super.key});
+  final List<NoteCategory> categories;
+  final NoteCategory currentCategory;
+
+  const NotesPage({super.key, required this.categories, required this.currentCategory});
 
   @override
-  State<NotesPage> createState() =>
-      _NotesPageState();
+  State<NotesPage> createState() => _NotesPageState();
 }
 
 class _NotesPageState
-    extends State<NotesPage> {
+  extends State<NotesPage> {
+
+  NoteCategory currentNoteCategory = NoteCategory();
+
   // Text controller
-  final textController =
-      TextEditingController();
+  final textController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    currentNoteCategory = widget.categories.first;
 
     // Fetch notes on startup
     readNotes();
+  }
+
+  // Update a category
+  void updateCategory(NoteCategory noteCategory) {
+    // Pre-fill the current note text
+    textController.text = noteCategory.name;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return CustomAlertDialog(
+          title: "Edit Category",
+          labelText: "Enter a new category name",
+          controller: textController,
+          onCancel: () {
+            Navigator.pop(context);
+          },
+          onSubmit: () async {
+            // Update note in DB
+            context.read<DatabaseService>().updateNoteCategory(
+              noteCategory.id,
+              textController.text,
+            );
+            // Clear controller
+            textController.clear();
+
+            // Close dialog box
+            Navigator.pop(context,);
+          }
+        );
+      }
+    );
   }
 
   // Create a note
@@ -36,47 +73,29 @@ class _NotesPageState
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-      title: const Text(
-        "Create Note",
-      ),
-      content: TextField(
-        controller: textController,
-        cursorColor: Theme.of(context).colorScheme.inversePrimary,
-        decoration: InputDecoration(
-          labelText: 'Enter note', // Optional: Add a label for clarity
-          labelStyle: TextStyle(color: Theme.of(context).colorScheme.inversePrimary), alignLabelWithHint: true,
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.inversePrimary, // Underline color when focused
-              width: 2.0,
-            ),
-          ),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.secondary, // Underline color when not focused
-              width: 2.0,
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        // Create button
-        MaterialButton(
-          onPressed: () {
+      builder: (context) {
+        return CustomAlertDialog(
+          title: "Create Note",
+          labelText: "Enter note",
+          controller: textController,
+          onCancel: () {
+            Navigator.pop(context);
+          },
+          onSubmit: () async {
             // Add to DB
-            context.read<DatabaseService>().addNote(textController.text);
+            context.read<DatabaseService>().addNote(
+              textController.text,
+              currentNoteCategory.id,
+            );
 
             // Clear controller
             textController.clear();
 
-            // Close dialog
+            // Close dialog box
             Navigator.pop(context);
           },
-          child: const Text("Create"),
-        ),
-      ],
-    ),
+        );
+      }
     );
   }
 
@@ -93,104 +112,81 @@ class _NotesPageState
     textController.text = note.text;
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text(
-              "Update Note",
-            ),
-            content: TextField(
-              controller: textController,
-              cursorColor: Theme.of(context).colorScheme.inversePrimary,
-              decoration: InputDecoration(
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.inversePrimary, // Underline color when focused
-                    width: 2.0,
-                  ),
-                ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.secondary, // Underline color when not focused
-                    width: 2.0,
-                  ),
-                ),
-              ),
-            ),
-            actions: [
-              // Update button
-              MaterialButton(
-                onPressed: () {
-                  // Update note in DB
-                  context
-                      .read<
-                        DatabaseService
-                      >()
-                      .updateNote(
-                        note.id,
-                        textController
-                            .text,
-                      );
-                  // Clear controller
-                  textController
-                      .clear();
+      builder: (context) {
+        return CustomAlertDialog(
+          title: "Update Note",
+          labelText: "Enter note",
+          controller: textController,
+          onCancel: () {
+            Navigator.pop(context);
+          },
+          onSubmit: () async {
+            // Update note in DB
+            context.read<DatabaseService>().updateNoteText(
+              note.id,
+              textController.text,
+            );
+            // Clear controller
+            textController.clear();
 
-                  // Close dialog box
-                  Navigator.pop(
-                    context,
-                  );
-                },
-                child: const Text(
-                  "Update",
-                ),
-              ),
-            ],
-          ),
+            // Close dialog box
+            Navigator.pop(context);
+          },
+        );
+      }
     );
   }
 
   // Delete a note
   void deleteNote(int id) {
-    context
-        .read<DatabaseService>()
-        .deleteNote(id);
+    context.read<DatabaseService>().deleteNote(id);
+  }
+
+  void onCategorySelected(NoteCategory category) {
+    setState(() {
+      currentNoteCategory = category;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Note DB
-    final database =
-        context.watch<DatabaseService>();
+  final database = context.watch<DatabaseService>();
 
-    // Current notes
-    List<Note> currentNotes =
-        database.currentNotes;
+  // Current notes
+  List<Note> currentNotes = database.currentNotes.where((note) => note.noteCategoryId == currentNoteCategory.id.toString()).toList();
 
-    return Scaffold(
+  return Scaffold(
       appBar: AppBar(
         elevation: 0,
         backgroundColor:
-            Colors.transparent,
+        Colors.transparent,
       ),
       backgroundColor:
-          Theme.of(
-            context,
-          ).colorScheme.surface,
+        Theme.of(
+          context,
+        ).colorScheme.surface,
       floatingActionButton:
-          FloatingActionButton(
-            onPressed: createNote,
-            backgroundColor:
-                Theme.of(
-                  context,
-                ).colorScheme.secondary,
-            child: Icon(
-              Icons.add,
-              color:
-                  Theme.of(context)
-                      .colorScheme
-                      .inversePrimary,
-            ),
+        FloatingActionButton(
+          onPressed: createNote,
+          backgroundColor:
+              Theme.of(
+                context,
+              ).colorScheme.secondary,
+          child: Icon(
+            Icons.add,
+            color:
+                Theme.of(context)
+                    .colorScheme
+                    .inversePrimary,
           ),
-      drawer: const MyDrawer(),
+        ),
+      drawer: MyDrawer(
+        onCategorySelected: onCategorySelected),
+        onDrawerChanged: (isOpened) {
+          if (isOpened) {
+            Provider.of<DatabaseService>(context, listen: false).fetchNoteCategories();
+          }
+        },
       body: Column(
         crossAxisAlignment:
             CrossAxisAlignment.start,
@@ -201,18 +197,21 @@ class _NotesPageState
                 const EdgeInsets.only(
                   left: 25.0,
                 ),
-            child: Text(
-              'Notes',
-              style: GoogleFonts.dmSerifText(
-                fontSize: 48,
-                color:
-                    Theme.of(context)
-                        .colorScheme
-                        .inversePrimary,
+            child: InkWell(
+              child: Text(
+                currentNoteCategory.name,
+                style: GoogleFonts.dmSerifText(
+                  fontSize: 48,
+                  color:
+                      Theme.of(context)
+                          .colorScheme
+                          .inversePrimary,
+                ),
               ),
+              onTap: () {updateCategory(currentNoteCategory);},
             ),
           ),
-
+      
           // List of notes
           Expanded(
             child: ListView.builder(
@@ -223,26 +222,19 @@ class _NotesPageState
                 index,
               ) {
                 // Get individual note
-                final note =
-                    currentNotes[index];
-
+                final note = currentNotes[index];
+      
                 // List tile UI
                 return NoteTile(
                   text: note.text,
-                  onEditPressed:
-                      () => updateNote(
-                        note,
-                      ),
-                  onDeletePressed:
-                      () => deleteNote(
-                        note.id,
-                      ),
+                  onEditPressed: () => updateNote(note,),
+                  onDeletePressed: () => deleteNote(note.id,),
                 );
               },
             ),
           ),
         ],
-      ),
+      )       
     );
   }
 }
