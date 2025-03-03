@@ -50,8 +50,8 @@ class _NotesPageState
             Navigator.pop(context);
           },
           onSubmit: () async {
-            // Update note in DB
-            context.read<DatabaseService>().updateNoteCategory(
+            // Update note category in DB
+            await context.read<DatabaseService>().updateNoteCategory(
               noteCategory.id,
               textController.text,
             );
@@ -59,7 +59,17 @@ class _NotesPageState
             textController.clear();
 
             // Close dialog box
-            Navigator.pop(context,);
+            if (context.mounted) {
+              Navigator.pop(context);
+              final updatedCategory = context.read<DatabaseService>().noteCategories.firstWhere(
+                (cat) => cat.id == noteCategory.id,
+                orElse: () => noteCategory
+              );
+              
+              setState(() {
+                currentNoteCategory = updatedCategory;
+              });
+            }
           }
         );
       }
@@ -208,7 +218,7 @@ class _NotesPageState
                           .inversePrimary,
                 ),
               ),
-              onTap: () {updateCategory(currentNoteCategory);},
+              onTap: () => updateCategory(currentNoteCategory),
             ),
           ),
       
@@ -227,8 +237,8 @@ class _NotesPageState
                 // List tile UI
                 return NoteTile(
                   text: note.text,
-                  onEditPressed: () => updateNote(note,),
-                  onDeletePressed: () => deleteNote(note.id,),
+                  onEditPressed: () => updateNote(note),
+                  onDeletePressed: () => deleteNote(note.id),
                 );
               },
             ),

@@ -6,8 +6,9 @@ class CustomAlertDialog extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onCancel;
   final VoidCallback onSubmit;
+  final FocusNode _focusNode = FocusNode();
 
-  const CustomAlertDialog({
+  CustomAlertDialog({
     super.key,
     required this.title,
     required this.labelText,
@@ -18,10 +19,16 @@ class CustomAlertDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Request focus when the dialog is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+
     return AlertDialog(
       title: Text(title),
       content: TextField(
         controller: controller,
+        focusNode: _focusNode,
         textCapitalization: TextCapitalization.sentences,
         cursorColor: Theme.of(context).colorScheme.inversePrimary,
         decoration: InputDecoration(

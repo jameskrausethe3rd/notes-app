@@ -34,7 +34,7 @@ class MyDrawer extends StatelessWidget {
                       ...db.noteCategories.map((category) {
                         TextEditingController controller = TextEditingController(text: category.name);
                         return DrawerTile(
-                          leadingIcon: Icons.note,
+                          leadingIcon: Icons.description,
                           title: category.name,
                           onTap: () {
                             onCategorySelected(category);
