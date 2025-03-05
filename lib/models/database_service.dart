@@ -6,7 +6,7 @@ import 'package:notes_app/models/note.dart';
 import 'package:notes_app/models/settings.dart';
 import 'package:path_provider/path_provider.dart';
 
-class DatabaseService extends ChangeNotifier{
+class DatabaseService extends ChangeNotifier {
   static late Isar isar;
 
   // List of notes
@@ -22,7 +22,7 @@ class DatabaseService extends ChangeNotifier{
     final dir = await getApplicationDocumentsDirectory();
     isar = await Isar.open([SettingsSchema, NoteCategorySchema, NoteSchema], directory: dir.path);
   }
-  
+
   // Create Default Settings
   Future<Settings> createDefaultSettings() async {
     Settings defaultSettings = Settings()
@@ -45,8 +45,7 @@ class DatabaseService extends ChangeNotifier{
 
     if (settings == null) {
       return createDefaultSettings();
-    }
-    else {
+    } else {
       _settings = settings;
       return settings;
     }
@@ -77,11 +76,11 @@ class DatabaseService extends ChangeNotifier{
   // Create Default Note Category
   Future<void> createDefaultNoteCategory() async {
     NoteCategory defaultNoteCategory = NoteCategory()
-        ..id = Isar.autoIncrement
-        ..name = "Notes";
-      await isar.writeTxn(() async {
-        await isar.noteCategorys.put(defaultNoteCategory);
-      });
+      ..id = Isar.autoIncrement
+      ..name = "Notes";
+    await isar.writeTxn(() async {
+      await isar.noteCategorys.put(defaultNoteCategory);
+    });
   }
 
   // Create Note Category
@@ -119,7 +118,7 @@ class DatabaseService extends ChangeNotifier{
     }
     return await isar.noteCategorys.where().findAll();
   }
-  
+
   // Update Note Category
   Future<void> updateNoteCategory(int id, String newName) async {
     final existingNoteCategory = await isar.noteCategorys.get(id);
