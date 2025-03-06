@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:notes_app/components/drawer_tile_settings.dart';
+import 'package:popover/popover.dart';
 
 class DrawerTile extends StatelessWidget {
   final IconData leadingIcon;
   final String title;
   final VoidCallback onTap;
   final TextEditingController controller;
-  final Future<void> Function(BuildContext, TextEditingController) onEdit;
-  final Future<void> Function(BuildContext) onDelete;
+  final Future<void> Function() onEditTap;
+  final Future<void> Function() onDeleteTap;
 
   const DrawerTile({
     super.key,
@@ -14,8 +16,8 @@ class DrawerTile extends StatelessWidget {
     required this.title,
     required this.onTap,
     required this.controller,
-    required this.onEdit,
-    required this.onDelete,
+    required this.onEditTap,
+    required this.onDeleteTap,
   });
 
   @override
@@ -30,37 +32,22 @@ class DrawerTile extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         onTap: onTap,
-        trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          onSelected: (String value) async {
-            if (value == 'edit') {
-              await onEdit(context, controller);
-            } else if (value == 'delete') {
-              await onDelete(context);
-            }
-          },
-          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-            PopupMenuItem<String>(
-              value: 'edit',
-              child: Row(
-                children: const [
-                  Icon(Icons.edit, size: 18),
-                  SizedBox(width: 8),
-                  Text("Edit"),
-                ],
+        trailing: Builder(
+          builder: (context) {
+            return IconButton(
+              icon: const Icon(Icons.more_vert),
+              onPressed: () => showPopover(
+                width: 100,
+                height: 100,
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                context: context,
+                bodyBuilder: (context) => DrawerTileSettings(
+                  onEditTap: onEditTap,
+                  onDeleteTap: onDeleteTap,
+                ),
               ),
-            ),
-            PopupMenuItem<String>(
-              value: 'delete',
-              child: Row(
-                children: const [
-                  Icon(Icons.delete, size: 18, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text("Delete", style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ],
+            );
+          }
         ),
       ),
     );

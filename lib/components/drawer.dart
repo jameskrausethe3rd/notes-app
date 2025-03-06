@@ -41,13 +41,13 @@ class MyDrawer extends StatelessWidget {
                             Navigator.pop(context); // Close drawer
                           },
                           controller: controller,
-                          onEdit: (context, controller) async {
+                          onEditTap: () async {
                             await editCategory(context, controller, db, category);
                             if (context.mounted) {
                               Navigator.pop(context);
                             }
                           },
-                          onDelete: (context) async {
+                          onDeleteTap: () async {
                             bool? confirmed = await showDialog(
                               context: context,
                               builder: (context) {
