@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-class NoteTile extends StatefulWidget {
+class NoteTile extends StatelessWidget {
   final String text;
   final void Function()? onEditPressed;
-  final void Function()? onDeletePressed;
+  final void Function()?
+  onDeletePressed;
 
   const NoteTile({
     super.key,
@@ -13,17 +14,17 @@ class NoteTile extends StatefulWidget {
   });
 
   @override
-  _NoteTileState createState() => _NoteTileState();
-}
-
-class _NoteTileState extends State<NoteTile> {
-  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(8),
+        color:
+            Theme.of(
+              context,
+            ).colorScheme.primary,
+        borderRadius:
+            BorderRadius.circular(8),
       ),
+      // padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 25),
       margin: const EdgeInsets.only(
         top: 10,
         left: 25,
@@ -31,42 +32,23 @@ class _NoteTileState extends State<NoteTile> {
       ),
       child: ListTile(
         title: Text(
-          widget.text,
-          style: TextStyle(color: Theme.of(context).colorScheme.inversePrimary),
-        ),
-        trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          onSelected: (String value) {
-            if (value == 'edit') {
-              if (widget.onEditPressed != null) {
-                widget.onEditPressed!();
-              }
-            } else if (value == 'delete') {
-              if (widget.onDeletePressed != null) {
-                Navigator.maybePop(context);
-                widget.onDeletePressed!();
-              }
-            }
-          },
-          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-            PopupMenuItem<String>(
-              value: 'edit',
-              child: Row(
-                children: const [
-                  Icon(Icons.edit, size: 18),
-                  SizedBox(width: 8),
-                  Text("Edit"),
-                ],
+          text,
+          style: TextStyle(color: Theme.of(context).colorScheme.inversePrimary)),
+        trailing: Row(
+          mainAxisSize:
+              MainAxisSize.min,
+          children: [
+            IconButton(
+              onPressed: onEditPressed,
+              icon: const Icon(
+                Icons.edit,
               ),
             ),
-            PopupMenuItem<String>(
-              value: 'delete',
-              child: Row(
-                children: const [
-                  Icon(Icons.delete, size: 18, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text("Delete", style: TextStyle(color: Colors.red)),
-                ],
+            IconButton(
+              onPressed:
+                  onDeletePressed,
+              icon: const Icon(
+                Icons.delete,
               ),
             ),
           ],

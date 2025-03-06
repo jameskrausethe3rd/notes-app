@@ -225,8 +225,12 @@ class _NotesPageState
           // List of notes
           Expanded(
             child: ListView.builder(
-              itemCount: currentNotes.length,
-              itemBuilder: (context, index) {
+              itemCount:
+                  currentNotes.length,
+              itemBuilder: (
+                context,
+                index,
+              ) {
                 // Get individual note
                 final note = currentNotes[index];
       
