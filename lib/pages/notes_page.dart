@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:notes_app/components/custom_alert_dialog.dart';
 import 'package:notes_app/components/drawer.dart';
@@ -18,10 +19,13 @@ class NotesPage extends StatefulWidget {
   State<NotesPage> createState() => _NotesPageState();
 }
 
-class _NotesPageState
-  extends State<NotesPage> {
-
+class _NotesPageState extends State<NotesPage> {
   NoteCategory currentNoteCategory = NoteCategory();
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  final ScrollController _scrollController = ScrollController();
+  final PageController _pageController = PageController();
+  bool _isFabVisible = true;
+  int _currentPage = 0;
 
   // Text controller
   final textController = TextEditingController();
@@ -32,7 +36,41 @@ class _NotesPageState
     currentNoteCategory = widget.categories.first;
 
     // Fetch notes on startup
-    readNotes();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      readNotes();
+    });
+
+    // Add scroll listener
+    _scrollController.addListener(_onScroll);
+    _pageController.addListener(() {
+      setState(() {
+        _currentPage = _pageController.page?.round() ?? 0;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.userScrollDirection == ScrollDirection.reverse) {
+      if (_isFabVisible) {
+        setState(() {
+          _isFabVisible = false;
+        });
+      }
+    } else if (_scrollController.position.userScrollDirection == ScrollDirection.forward) {
+      if (!_isFabVisible) {
+        setState(() {
+          _isFabVisible = true;
+        });
+      }
+    }
   }
 
   // Update a category
@@ -111,9 +149,7 @@ class _NotesPageState
 
   // Read a note
   void readNotes() {
-    context
-        .read<DatabaseService>()
-        .fetchNotes();
+    context.read<DatabaseService>().fetchNotes();
   }
 
   // Update a note
@@ -148,103 +184,181 @@ class _NotesPageState
   }
 
   // Delete a note
-  void deleteNote(int id) {
-    context.read<DatabaseService>().deleteNote(id);
+  void deleteNoteAsync(int id) async {
+    final index = context.read<DatabaseService>().currentNotes.indexWhere((note) => note.id == id);
+    if (index != -1) {
+      final removedNote = context.read<DatabaseService>().currentNotes.removeAt(index);
+      _listKey.currentState?.removeItem(
+        index,
+        (context, animation) => _buildRemovedItem(removedNote, animation),
+        duration: const Duration(milliseconds: 300),
+      );
+      await context.read<DatabaseService>().deleteNote(id);
+      if (mounted) {
+        setState(() {
+          // Trigger a rebuild to update the UI
+        });
+      }
+    }
+  }
+
+  void toggleNoteHiddenStatusAsync(int id) async {
+    final index = context.read<DatabaseService>().currentNotes.indexWhere((note) => note.id == id);
+    if (index != -1) {
+      final note = context.read<DatabaseService>().currentNotes[index];
+      note.isHidden = !note.isHidden;
+      await context.read<DatabaseService>().updateNoteHiddenStatus(id, note.isHidden);
+      if (mounted) {
+        setState(() {
+          // Trigger a rebuild to update the UI
+        });
+      }
+    }
+  }
+
+  Widget _buildRemovedItem(Note note, Animation<double> animation) {
+    return FadeTransition(
+      opacity: animation,
+      child: SizeTransition(
+        sizeFactor: animation,
+        axisAlignment: 0.0,
+        child: NoteTile(
+          text: note.text,
+          onEditPressed: () => updateNote(note),
+          onDeletePressed: () => deleteNoteAsync(note.id),
+          onHiddenPressed: () => toggleNoteHiddenStatusAsync(note.id),
+        ),
+      ),
+    );
   }
 
   void onCategorySelected(NoteCategory category) {
     setState(() {
       currentNoteCategory = category;
+      _pageController.jumpToPage(0); // Reset to the first page
     });
   }
 
   @override
   Widget build(BuildContext context) {
-  final database = context.watch<DatabaseService>();
+    final database = context.watch<DatabaseService>();
 
-  // Current notes
-  List<Note> currentNotes = database.currentNotes.where((note) => note.noteCategoryId == currentNoteCategory.id.toString()).toList();
+    // Current notes
+    List<Note> currentNotes = database.currentNotes.where((note) => note.noteCategoryId == currentNoteCategory.id.toString() && !note.isHidden).toList();
+    List<Note> hiddenNotes = database.currentNotes.where((note) => note.noteCategoryId == currentNoteCategory.id.toString() && note.isHidden).toList();
 
-  return Scaffold(
+    return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        backgroundColor:
-        Colors.transparent,
+        backgroundColor: Colors.transparent,
       ),
-      backgroundColor:
-        Theme.of(
-          context,
-        ).colorScheme.surface,
-      floatingActionButton:
-        FloatingActionButton(
-          onPressed: createNote,
-          backgroundColor:
-              Theme.of(
-                context,
-              ).colorScheme.secondary,
-          child: Icon(
-            Icons.add,
-            color:
-                Theme.of(context)
-                    .colorScheme
-                    .inversePrimary,
-          ),
-        ),
-      drawer: MyDrawer(
-        onCategorySelected: onCategorySelected),
-        onDrawerChanged: (isOpened) {
-          if (isOpened) {
-            Provider.of<DatabaseService>(context, listen: false).fetchNoteCategories();
-          }
-        },
-      body: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          // Heading
-          Padding(
-            padding:
-                const EdgeInsets.only(
-                  left: 25.0,
-                ),
-            child: InkWell(
-              child: Text(
-                currentNoteCategory.name,
-                style: GoogleFonts.dmSerifText(
-                  fontSize: 48,
-                  color:
-                      Theme.of(context)
-                          .colorScheme
-                          .inversePrimary,
-                ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      floatingActionButton: _isFabVisible
+          ? FloatingActionButton(
+              onPressed: createNote,
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              child: Icon(
+                Icons.add,
+                color: Theme.of(context).colorScheme.inversePrimary,
               ),
-              onTap: () => updateCategory(currentNoteCategory),
+            )
+          : null,
+      drawer: MyDrawer(
+        onCategorySelected: onCategorySelected,
+      ),
+      onDrawerChanged: (isOpened) {
+        if (isOpened) {
+          Provider.of<DatabaseService>(context, listen: false).fetchNoteCategories();
+        }
+      },
+      body: Column(
+        children: [
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              children: [
+                _buildNotesList(currentNotes, currentNoteCategory.name),
+                _buildNotesList(hiddenNotes, "Hidden"),
+              ],
             ),
           ),
-      
-          // List of notes
-          Expanded(
-            child: ListView.builder(
-              itemCount:
-                  currentNotes.length,
-              itemBuilder: (
-                context,
-                index,
-              ) {
-                // Get individual note
-                final note = currentNotes[index];
-      
-                // List tile UI
-                return NoteTile(
-                  text: note.text,
-                  onEditPressed: () => updateNote(note),
-                  onDeletePressed: () => deleteNote(note.id),
-                );
-              },
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildPageIndicator(0),
+                  _buildPageIndicator(1),
+                ],
+              ),
             ),
           ),
         ],
-      )       
+      ),
+    );
+  }
+
+  Widget _buildPageIndicator(int pageIndex) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4.0),
+      width: 8.0,
+      height: 8.0,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: _currentPage == pageIndex
+            ? Theme.of(context).colorScheme.secondary
+            : Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+
+  Widget _buildNotesList(List<Note> notes, String title) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Heading
+        Padding(
+          padding: const EdgeInsets.only(left: 25.0, top: 16.0),
+          child: InkWell(
+            child: Text(
+              title,
+              style: GoogleFonts.dmSerifText(
+                fontSize: 48,
+                color: Theme.of(context).colorScheme.inversePrimary,
+              ),
+            ),
+            onTap: () {
+              // Don't allow updating category name if the current page is the last in the pageview
+              if (_currentPage == 1) {
+                return;
+              }
+
+              updateCategory(currentNoteCategory);
+            },
+          ),
+        ),
+
+        // List of notes
+        Expanded(
+          child: ListView.builder(
+            controller: _scrollController,
+            itemCount: notes.length,
+            itemBuilder: (context, index) {
+              // Get individual note
+              final note = notes[index];
+
+              // List tile UI
+              return NoteTile(
+                text: note.text,
+                onEditPressed: () => updateNote(note),
+                onDeletePressed: () => deleteNoteAsync(note.id),
+                onHiddenPressed: () => toggleNoteHiddenStatusAsync(note.id),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

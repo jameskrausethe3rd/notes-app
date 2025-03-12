@@ -6,12 +6,14 @@ class NoteTile extends StatelessWidget {
   final String text;
   final void Function()? onEditPressed;
   final void Function()? onDeletePressed;
+  final void Function()? onHiddenPressed;
 
   const NoteTile({
     super.key,
     required this.text,
     required this.onEditPressed,
     required this.onDeletePressed,
+    required this.onHiddenPressed,
   });
 
   @override
@@ -41,12 +43,13 @@ class NoteTile extends StatelessWidget {
               icon: const Icon(Icons.more_vert),
               onPressed: () => showPopover(
                 width: 100,
-                height: 100,
+                height: 150,
                 backgroundColor: Theme.of(context).colorScheme.surface,
                 context: context,
                 bodyBuilder: (context) => NoteTileSettings(
                   onEditTap: onEditPressed,
                   onDeleteTap: onDeletePressed,
+                  onHiddenTap: onHiddenPressed,
                 ),
               ),
             );

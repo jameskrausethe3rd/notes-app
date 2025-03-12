@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 class NoteTileSettings extends StatelessWidget {
   final void Function()? onEditTap;
   final void Function()? onDeleteTap;
+  final void Function()? onHiddenTap;
 
-  const NoteTileSettings({super.key, required this.onEditTap, required this.onDeleteTap});
+  const NoteTileSettings({super.key, required this.onEditTap, required this.onDeleteTap, required this.onHiddenTap});
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +23,27 @@ class NoteTileSettings extends StatelessWidget {
             child: Center(
               child: Text(
                 "Edit", 
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.inversePrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            ),
+          )
+        ),
+
+        // Hide
+        GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+            onHiddenTap!();
+          },
+          child: Container(
+            height: 50,
+            color: Theme.of(context).colorScheme.surface,
+            child: Center(
+              child: Text(
+                "Hide", 
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.inversePrimary,
                   fontWeight: FontWeight.bold,
@@ -50,7 +72,7 @@ class NoteTileSettings extends StatelessWidget {
               )
             ),
           )
-        )
+        ),
       ],
     );
   }

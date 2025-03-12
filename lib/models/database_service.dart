@@ -86,8 +86,14 @@ class DatabaseService extends ChangeNotifier{
 
   // Create Note Category
   Future<void> addNoteCategory(String noteCategoryName) async {
+    final sanitizedText = noteCategoryName.trim();
+
+    if (sanitizedText.isEmpty) {
+      return;
+    }
+
     // Create note object from user text
-    final newNoteCategory = NoteCategory()..name = noteCategoryName;
+    final newNoteCategory = NoteCategory()..name = sanitizedText;
 
     // Save to DB
     await isar.writeTxn(() => isar.noteCategorys.put(newNoteCategory));
@@ -122,9 +128,15 @@ class DatabaseService extends ChangeNotifier{
   
   // Update Note Category
   Future<void> updateNoteCategory(int id, String newName) async {
+    final sanitizedText = newName.trim();
+
+    if (sanitizedText.isEmpty) {
+      return;
+    }
+
     final existingNoteCategory = await isar.noteCategorys.get(id);
     if (existingNoteCategory != null) {
-      existingNoteCategory.name = newName;
+      existingNoteCategory.name = sanitizedText;
       await isar.writeTxn(() => isar.noteCategorys.put(existingNoteCategory));
       await fetchNoteCategories();
     }
@@ -151,9 +163,16 @@ class DatabaseService extends ChangeNotifier{
 
   // Create Note
   Future<void> addNote(String textFromuser, Id noteCategoryId) async {
+    final sanitizedText = textFromuser.trim();
+
+    if (sanitizedText.isEmpty) {
+      return;
+    }
+
     // Create note object from user text
     final newNote = Note()
-      ..text = textFromuser
+      ..text = sanitizedText
+      ..isHidden = false
       ..noteCategoryId = noteCategoryId.toString();
 
     // Save to DB
@@ -166,16 +185,42 @@ class DatabaseService extends ChangeNotifier{
   // Read Note
   Future<void> fetchNotes() async {
     List<Note> fetchedNotes = await isar.notes.where().findAll();
+
+    // Set isHidden to false if it isn't initialized for each note
+    // Remove after updating on my phone
+    for (var note in fetchedNotes) {
+      if (!note.isHidden) {
+        note.isHidden = false;
+        await isar.writeTxn(() => isar.notes.put(note));
+      }
+    }
+
     currentNotes.clear();
     currentNotes.addAll(fetchedNotes);
     notifyListeners();
   }
 
-  // Update Note
+  // Update Note Text
   Future<void> updateNoteText(int id, String newText) async {
+    final sanitizedText = newText.trim();
+
+    if (sanitizedText.isEmpty) {
+      return;
+    }
+
     final existingNote = await isar.notes.get(id);
     if (existingNote != null) {
-      existingNote.text = newText;
+      existingNote.text = sanitizedText;
+      await isar.writeTxn(() => isar.notes.put(existingNote));
+      await fetchNotes();
+    }
+  }
+
+  // Update Note Hidden Status
+  Future<void> updateNoteHiddenStatus(int id, bool isHidden) async {
+    final existingNote = await isar.notes.get(id);
+    if (existingNote != null) {
+      existingNote.isHidden = isHidden;
       await isar.writeTxn(() => isar.notes.put(existingNote));
       await fetchNotes();
     }

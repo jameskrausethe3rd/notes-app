@@ -9,4 +9,5 @@ class Note {
   Id id = Isar.autoIncrement;
   late String text;
   late String noteCategoryId;
+  late bool isHidden;
 }

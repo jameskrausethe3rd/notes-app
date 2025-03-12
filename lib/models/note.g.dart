@@ -17,13 +17,18 @@ const NoteSchema = CollectionSchema(
   name: r'Note',
   id: 6284318083599466921,
   properties: {
-    r'noteCategoryId': PropertySchema(
+    r'isHidden': PropertySchema(
       id: 0,
+      name: r'isHidden',
+      type: IsarType.bool,
+    ),
+    r'noteCategoryId': PropertySchema(
+      id: 1,
       name: r'noteCategoryId',
       type: IsarType.string,
     ),
     r'text': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'text',
       type: IsarType.string,
     )
@@ -59,8 +64,9 @@ void _noteSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.noteCategoryId);
-  writer.writeString(offsets[1], object.text);
+  writer.writeBool(offsets[0], object.isHidden);
+  writer.writeString(offsets[1], object.noteCategoryId);
+  writer.writeString(offsets[2], object.text);
 }
 
 Note _noteDeserialize(
@@ -71,8 +77,9 @@ Note _noteDeserialize(
 ) {
   final object = Note();
   object.id = id;
-  object.noteCategoryId = reader.readString(offsets[0]);
-  object.text = reader.readString(offsets[1]);
+  object.isHidden = reader.readBool(offsets[0]);
+  object.noteCategoryId = reader.readString(offsets[1]);
+  object.text = reader.readString(offsets[2]);
   return object;
 }
 
@@ -84,8 +91,10 @@ P _noteDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 1:
+      return (reader.readString(offset)) as P;
+    case 2:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -228,6 +237,15 @@ extension NoteQueryFilter on QueryBuilder<Note, Note, QFilterCondition> {
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterFilterCondition> isHiddenEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isHidden',
+        value: value,
       ));
     });
   }
@@ -496,6 +514,18 @@ extension NoteQueryObject on QueryBuilder<Note, Note, QFilterCondition> {}
 extension NoteQueryLinks on QueryBuilder<Note, Note, QFilterCondition> {}
 
 extension NoteQuerySortBy on QueryBuilder<Note, Note, QSortBy> {
+  QueryBuilder<Note, Note, QAfterSortBy> sortByIsHidden() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isHidden', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterSortBy> sortByIsHiddenDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isHidden', Sort.desc);
+    });
+  }
+
   QueryBuilder<Note, Note, QAfterSortBy> sortByNoteCategoryId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'noteCategoryId', Sort.asc);
@@ -534,6 +564,18 @@ extension NoteQuerySortThenBy on QueryBuilder<Note, Note, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Note, Note, QAfterSortBy> thenByIsHidden() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isHidden', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Note, Note, QAfterSortBy> thenByIsHiddenDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isHidden', Sort.desc);
+    });
+  }
+
   QueryBuilder<Note, Note, QAfterSortBy> thenByNoteCategoryId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'noteCategoryId', Sort.asc);
@@ -560,6 +602,12 @@ extension NoteQuerySortThenBy on QueryBuilder<Note, Note, QSortThenBy> {
 }
 
 extension NoteQueryWhereDistinct on QueryBuilder<Note, Note, QDistinct> {
+  QueryBuilder<Note, Note, QDistinct> distinctByIsHidden() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isHidden');
+    });
+  }
+
   QueryBuilder<Note, Note, QDistinct> distinctByNoteCategoryId(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -580,6 +628,12 @@ extension NoteQueryProperty on QueryBuilder<Note, Note, QQueryProperty> {
   QueryBuilder<Note, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<Note, bool, QQueryOperations> isHiddenProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isHidden');
     });
   }
 
